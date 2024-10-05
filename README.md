@@ -4,10 +4,10 @@
 ## Lingxi-0.4B(灵犀大模型)
 <details open> 
 <summary>  <b>2024-10-05</b> </summary>
-第一版预训练数据较少，主要是为了跑通流程
-- 预训练数据：[firefly-pretrain-dataset](https://huggingface.co/datasets/YeungNLP/firefly-pretrain-dataset)。差不多有5B token
-- sft数据：[firely-train](https://huggingface.co/datasets/YeungNLP/firefly-train-1.1M)
-- 执行脚本：[bash run.sh]()
+第一版预训练数据较少，主要是为了跑通流程<br>
+- 预训练数据：[firefly-pretrain-dataset](https://huggingface.co/datasets/YeungNLP/firefly-pretrain-dataset)。差不多有5B token<br>
+- sft数据：[firely-train](https://huggingface.co/datasets/YeungNLP/firefly-train-1.1M)<br>
+- 执行脚本：[bash run.sh]()<br>
 - case:
 
 </details>
