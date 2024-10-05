@@ -14,6 +14,7 @@
 ![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case1.png)
 ![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case2.png)
 ![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case3.png)
+![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case4.png)
 </details>
 
 <details close> 
