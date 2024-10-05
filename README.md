@@ -1,5 +1,5 @@
 # LLM_Trainer
-从零训练一个0.4B的大模型（灵犀大模型）。代码包括了pretrain，sft，dpo等训练方式
+从零训练一个0.4B的大模型（灵犀大模型，寓意心有灵犀一点通）。代码包括了pretrain，sft，dpo等训练方式
 
 ## Lingxi-0.4B(灵犀大模型)
 <details open> 
