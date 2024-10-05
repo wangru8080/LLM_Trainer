@@ -7,9 +7,7 @@
 第一版预训练数据较少，主要是为了跑通流程<br>
 - 预训练数据：[firefly-pretrain-dataset](https://huggingface.co/datasets/YeungNLP/firefly-pretrain-dataset)。差不多有5B token<br>
 - sft数据：[firely-train](https://huggingface.co/datasets/YeungNLP/firefly-train-1.1M)<br>
-- 执行脚本：[bash run.sh]()<br>
+- 执行脚本：[bash run.sh](https://github.com/wangru8080/LLM_Trainer/blob/main/run.sh)<br>
 - case:
-
-</details>
 
 <details close> 
