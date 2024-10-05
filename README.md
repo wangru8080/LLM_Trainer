@@ -9,7 +9,7 @@
 - 预训练数据：使用约5B token进行预训练，训练约50个小时。 <br>
 - sft数据：[firely-train](https://huggingface.co/datasets/YeungNLP/firefly-train-1.1M) .使用Sorted batching方式进行微调<br>
 - 执行脚本：[bash run.sh](https://github.com/wangru8080/LLM_Trainer/blob/main/run.sh)<br>
-- loss:
+- loss:  
   pt-loss:
   ![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/loss-v1-pt.png)
   sft-loss:
