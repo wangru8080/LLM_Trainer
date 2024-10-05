@@ -4,11 +4,12 @@
 ## Lingxi-0.4B(灵犀大模型)
 <details open> 
 <summary>  <b>2024-10-02</b> </summary>
-第一版使用的预训练数据较少，跑通整个流程，暂无身份信息，仅支持单轮对话。目前存在幻觉、重复等问题。<br>
+第一版使用的预训练数据较少，跑通整个流程，暂无模型身份信息，仅支持单轮对话。目前存在幻觉、重复等问题。  
 
-- 预训练数据：使用约5B token进行预训练，训练约50个小时。 <br>
-- sft数据：[firely-train](https://huggingface.co/datasets/YeungNLP/firefly-train-1.1M) .使用Sorted batching方式进行微调<br>
-- 执行脚本：[bash run.sh](https://github.com/wangru8080/LLM_Trainer/blob/main/run.sh)<br>
+- 词表：直接使用了qwen的词表
+- 预训练：使用约5B token进行预训练，训练约50个小时。   
+- sft：[firely-train](https://huggingface.co/datasets/YeungNLP/firefly-train-1.1M) .使用Sorted batching方式进行微调  
+- 执行脚本：[bash run.sh](https://github.com/wangru8080/LLM_Trainer/blob/main/run.sh)  
 - loss:  
   pt-loss:
   ![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/loss-v1-pt.png)
