@@ -17,4 +17,5 @@
 
 <details close> 
 <summary>  <b>2024-10-05</b> </summary>
-使用Skypile-150B开源训练数据进行预训练，进行中，由于资源的情况大约需要训练1400个小时
+
+使用[Skypile-150B](https://huggingface.co/datasets/Skywork/SkyPile-150B)开源训练数据进行预训练，进行中，由于资源的情况大约需要训练1400个小时
