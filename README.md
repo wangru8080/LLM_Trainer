@@ -6,7 +6,7 @@
 <summary>  <b>2024-10-02</b> </summary>
 第一版使用的预训练数据较少，跑通整个流程，暂无身份信息，仅支持单轮对话<br>
 
-- 预训练数据：[firefly-pretrain-dataset](https://huggingface.co/datasets/YeungNLP/firefly-pretrain-dataset) 。 大约有5B token <br>
+- 预训练数据：使用约5B token进行预训练 <br>
 - sft数据：[firely-train](https://huggingface.co/datasets/YeungNLP/firefly-train-1.1M)<br>
 - 执行脚本：[bash run.sh](https://github.com/wangru8080/LLM_Trainer/blob/main/run.sh)<br>
 - case:
@@ -19,4 +19,4 @@
 <details close> 
 <summary>  <b>2024-10-05</b> </summary>
 
-使用[Skypile-150B](https://huggingface.co/datasets/Skywork/SkyPile-150B)开源训练数据进行预训练，约150B token。进行中，由于资源的情况大约需要训练1400个小时
+使用约150B token进行预训练。进行中，由于资源的情况大约需要训练1400个小时
