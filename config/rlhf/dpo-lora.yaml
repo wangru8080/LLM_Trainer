@@ -1,0 +1,58 @@
+# model_args
+model_name_or_path: server/lora/Qwen2.5-14B-Instruct-MS-V2
+tokenizer_name_or_path: server/lora/Qwen2.5-14B-Instruct-MS-V2
+
+# data_args
+train_file: data/dpo_data.json
+output_dir: output/Qwen2.5-14B-Instruct-V2-MS-DPO-LORA-LR-2e-6
+preprocessing_num_workers: 32
+data_cache_dir: cache/dpo
+max_seq_length: 4096
+template_name: qwen
+
+# train_args
+deepspeed: config/deepspeed/ds_config_zero2.json
+num_train_epochs: 2
+per_device_train_batch_size: 2
+gradient_accumulation_steps: 4
+seed: 3407
+do_train: true
+optim: adamw_apex_fused
+learning_rate: 2.0e-6 #5.0e-6
+lr_scheduler_type: cosine
+warmup_ratio: 0.01
+adam_beta1: 0.9
+adam_beta2: 0.95
+weight_decay: 0.1
+max_grad_norm: 1.0
+bf16: true
+fp16: false
+overwrite_output_dir: true
+gradient_checkpointing: true
+save_steps: 312
+logging_steps: 10
+logging_strategy: steps
+save_strategy: steps
+logging_first_step: true
+report_to: tensorboard
+
+# extra_train_args
+task_type: dpo
+train_mode: lora
+use_flash_att: true
+use_flash_attn_ce_loss: false
+train_shuffle: false
+
+lora_rank: 8
+lora_alpha: 16
+lora_dropout: 0.01
+
+# dpo
+beta: 0.1
+max_prompt_length: 1024
+dataset_num_proc: 32
+
+# eval
+# per_device_eval_batch_size: 1
+# eval_strategy: steps
+# eval_steps: 10
