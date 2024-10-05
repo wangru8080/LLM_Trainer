@@ -6,6 +6,7 @@
 <summary>  <b>2024-10-02</b> </summary>
 第一版使用的预训练数据较少，跑通整个流程，暂无模型身份信息，仅支持单轮对话。目前存在幻觉、重复等问题。  
 
+- huggingface模型下载：[Lingxi-0.4B-Instruct](https://huggingface.co/wangru8080/Lingxi-0.4B-Instruct)
 - 词表：直接使用了qwen的词表
 - 预训练：使用约5B token进行预训练，训练约50个小时。   
 - sft：[firely-train](https://huggingface.co/datasets/YeungNLP/firefly-train-1.1M) .使用Sorted batching方式进行微调  
