@@ -281,16 +281,4 @@ if __name__ == '__main__':
     from transformers import AutoTokenizer
     import glob
     tokenizer = AutoTokenizer.from_pretrained('lingxi', trust_remote_code=True)
-    # path_list = glob.glob('/private/home/wangru/data/pretrain_dataset/firefly-pretrain-dataset/*.jsonl')
-    # path_list.append('/private/home/wangru/project/mainstream/data/pt_data/ms_pt.json')
-    path_list = glob.glob('/private/home/wangru/data/pretrain_dataset/SkyPile-150B/data/*.json*')
-    # path_list = ['/private/home/wangru/data/pretrain_dataset/563w_baidubaike_process.json', '/private/home/wangru/data/pretrain_dataset/BelleGroup/train_3.5M_CN.json']
-    dataset = build_pretrain_dataset(
-        data_path=path_list,
-        tokenizer=tokenizer,
-        data_cache_dir='cache/SkyPile',
-        preprocessing_num_workers=32,
-        max_seq_len=4096
-    )
-    print(dataset)
     
