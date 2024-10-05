@@ -4,7 +4,7 @@
 ## Lingxi-0.4B(灵犀大模型)
 <details open> 
 <summary>  <b>2024-10-02</b> </summary>
-第一版使用的预训练数据较少，跑通整个流程，暂无身份信息，仅支持单轮对话<br>
+第一版使用的预训练数据较少，跑通整个流程，暂无身份信息，仅支持单轮对话。目前存在幻觉、重复等问题。<br>
 
 - 预训练数据：使用约5B token进行预训练 <br>
 - sft数据：[firely-train](https://huggingface.co/datasets/YeungNLP/firefly-train-1.1M)<br>
