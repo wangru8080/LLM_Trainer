@@ -9,7 +9,7 @@
 - huggingface模型下载：[Lingxi-0.4B-Instruct](https://huggingface.co/wangru8080/Lingxi-0.4B-Instruct)
 - 词表：直接使用了qwen的词表
 - 预训练：使用约5B token进行预训练，训练约50个小时。   
-- sft：[firely-train](https://huggingface.co/datasets/YeungNLP/firefly-train-1.1M) .使用Sorted batching方式进行微调  
+- sft：训练数据[firely-train](https://huggingface.co/datasets/YeungNLP/firefly-train-1.1M) .使用Sorted batching方式进行微调  
 - 执行脚本：[bash run.sh](https://github.com/wangru8080/LLM_Trainer/blob/main/run.sh)  
 - loss:  
   pt-loss:
