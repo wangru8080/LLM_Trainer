@@ -9,6 +9,7 @@
 - 预训练数据：[firefly-pretrain-dataset](https://huggingface.co/datasets/YeungNLP/firefly-pretrain-dataset) 。 大约有5B token <br>
 - sft数据：[firely-train](https://huggingface.co/datasets/YeungNLP/firefly-train-1.1M)<br>
 - 执行脚本：[bash run.sh](https://github.com/wangru8080/LLM_Trainer/blob/main/run.sh)<br>
+<details close> 
 - case:
 ![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case0.png)
 ![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case1.png)
