@@ -12,7 +12,6 @@ parser.add_argument('--output', type=str, required=True, help='The output file')
 parser.add_argument('--proportion_config', type=str, required=True, help='The json configuration specifying the proportion of one type of data used in one epoch')
 parser.add_argument('--epochs', type=int, required=True, help='The total epochs built for the whole dataset')
 parser.add_argument('--seed', type=int, default=42, help='The random seed')
-parser.add_argument('--transfer_messages', type=eval, default=True, help='是否转化成messages格式')
 args = parser.parse_args()
 
 
@@ -74,13 +73,6 @@ for epoch in range(args.epochs):
     random.shuffle(epoch_data)
 
     for obj in epoch_data:
-        if args.transfer_messages:
-            out = [
-                dict(role='system', content='You are a helpful assistant.'),
-                dict(role='user', content=obj['instruction']+obj['input']),
-                dict(role='assistant', content=obj['output']),
-            ]
-            obj = {'conversations': out}
         print(json.dumps(obj, ensure_ascii=False), file=fout, flush=True)
 
 fout.close()
