@@ -122,7 +122,7 @@ def tokenize_function(examples, tokenizer):
     input_ids = []
     for example in examples['text']:
         output = tokenizer.encode(example, add_special_tokens=False)
-        output.append(tokenizer.eos_token_id)
+        # output.append(tokenizer.eos_token_id)
         input_ids.append(output)
     labels = input_ids.copy()
     return {'input_ids': input_ids, 'labels': labels}
@@ -259,6 +259,90 @@ def build_dpo_dataset(data_path: Union[List[str], str], max_seq_len: int, data_c
     all_datasets = concatenate_datasets(all_datasets)
     return all_datasets
 
+def preprocess_reward_function(examples, tokenizer, max_seq_len, template_name, discard_long_sample):
+    if template_name not in template_dict.keys():
+        raise Exception(f"template_name doesn't exist, all template_name: {template_dict.keys()}")
+    
+    template = template_dict[template_name]
+    system_format = template.system_format
+    user_format = template.user_format
+    assistant_format = template.assistant_format
+    system = template.system
+
+    new_examples = {
+        'input_ids_chosen': [],
+        'attention_mask_chosen': [],
+        'input_ids_rejected': [],
+        'attention_mask_rejected': [],
+    }
+    for question, response_chosen, response_rejected in zip(examples['question'], examples['response_chosen'], examples['response_rejected']):
+        system_text = ''
+        if system:
+            system_text = system_format.format(content=system)
+        user_text = user_format.format(content=question)
+        prompt = system_text + user_text 
+        chosen_prompt = prompt + assistant_format.format(content=response_chosen, stop_token=tokenizer.eos_token)
+        rejected_prompt = prompt + assistant_format.format(content=response_rejected, stop_token=tokenizer.eos_token)
+        
+        tokenized_chosen = tokenizer(chosen_prompt)
+        tokenized_rejected = tokenizer(rejected_prompt)
+
+        if discard_long_sample and (len(tokenized_chosen['input_ids']) > max_seq_len or len(tokenized_rejected['input_ids']) > max_seq_len):
+            continue
+
+        new_examples['input_ids_chosen'].append(tokenized_chosen['input_ids'][:max_seq_len])
+        new_examples['attention_mask_chosen'].append(tokenized_chosen['attention_mask'][:max_seq_len])
+        new_examples['input_ids_rejected'].append(tokenized_rejected['input_ids'][:max_seq_len])
+        new_examples['attention_mask_rejected'].append(tokenized_rejected['attention_mask'][:max_seq_len])
+
+    return new_examples
+
+def build_reward_dataset(data_path: Union[List[str], str],
+                         tokenizer: transformers.PreTrainedTokenizer,
+                         max_seq_len: int, 
+                         discard_long_sample: bool,
+                         data_cache_dir=None,
+                         preprocessing_num_workers=None,
+                         template_name='qwen'
+                         ):
+    logging.info('building dataset...')
+
+    all_datasets = []
+
+    if not isinstance(data_path, (list, tuple)):
+        data_path = [data_path]
+
+    for file in data_path:
+        if data_cache_dir is None:
+            data_cache_dir = str(os.path.dirname(file))
+
+        cache_path = os.path.join(data_cache_dir, os.path.basename(file).split('.')[0])
+        os.makedirs(cache_path, exist_ok=True)
+        try:
+            processed_dataset = datasets.load_from_disk(cache_path)
+            logger.info(f'training datasets - {file} has been loaded from disk')
+        except Exception:
+            raw_dataset = load_dataset("json", data_files=file, cache_dir=cache_path)
+            raw_dataset = raw_dataset.select_columns(['question', 'response_chosen', 'response_rejected'])
+
+            tokenization = functools.partial(preprocess_reward_function, tokenizer=tokenizer, max_seq_len=max_seq_len, template_name=template_name, discard_long_sample=discard_long_sample)
+
+            processed_dataset = raw_dataset.map(
+                tokenization,
+                batched=True,
+                batch_size=8000,
+                num_proc=preprocessing_num_workers,
+                remove_columns=['question', 'response_chosen', 'response_rejected'],
+                keep_in_memory=False,
+                desc='preprocessing on dataset',
+            )
+            processed_dataset.save_to_disk(cache_path)
+
+        processed_dataset.set_format('torch')
+        all_datasets.append(processed_dataset['train'])
+    all_datasets = concatenate_datasets(all_datasets)
+    return all_datasets
+                             
 @dataclass
 class DataCollatorForPadding(object):
     """Collate examples for supervised fine-tuning."""
