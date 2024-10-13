@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional
 from transformers import TrainingArguments
-from trl import DPOConfig, ORPOConfig
+from trl import DPOConfig, ORPOConfig, RewardConfig
 from template import template_dict
 
 @dataclass
@@ -62,8 +62,8 @@ class DataTrainingArguments:
     )
 
 @dataclass
-class ExtraTrainingArguments(DPOConfig, ORPOConfig, TrainingArguments):
-    task_type: str = field(default="sft", metadata={"help": "[zero-pt, pt, sft, dpo, orpo]", "choices": ["zero-pt", "pt", "sft", "dpo", "orpo"]})
+class ExtraTrainingArguments(RewardConfig, DPOConfig, ORPOConfig, TrainingArguments):
+    task_type: str = field(default="sft", metadata={"help": "[zero-pt, pt, sft, dpo, orpo, reward]", "choices": ["zero-pt", "pt", "sft", "dpo", "orpo", "reward"]})
     train_mode: str = field(default="qlora", metadata={"help": "[full, lora, qlora]", "choices": ["full", "lora", "qlora"]})
     lora_rank : Optional[int] = field(default=None)
     lora_dropout : Optional[float] = field(default=None)
