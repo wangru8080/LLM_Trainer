@@ -10,10 +10,11 @@ from transformers import (
     AutoConfig,
     AutoTokenizer,
     AutoModelForCausalLM,
+    AutoModelForSequenceClassification,
     AddedToken
 )
 from transformers.trainer_utils import get_last_checkpoint
-from trl import DPOTrainer, ORPOTrainer
+from trl import DPOTrainer, ORPOTrainer, RewardTrainer
 import glob
 import argparse
 import logging
@@ -22,7 +23,7 @@ import torch.nn as nn
 import bitsandbytes as bnb
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training, TaskType
 from arguments import ModelArguments, DataTrainingArguments, ExtraTrainingArguments
-from build_dataset import build_sft_dataset, build_pretrain_dataset, build_dpo_dataset, DataCollatorForPadding
+from build_dataset import build_sft_dataset, build_pretrain_dataset, build_dpo_dataset, build_reward_dataset, DataCollatorForPadding
 from trainer import CustomizedTrainer
 import warnings
 warnings.filterwarnings('ignore')
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 def setup_everything():
     parser = argparse.ArgumentParser()
     parser.add_argument('--train_args_file', type=str, default=None)
-    parser.add_argument("--local_rank", type=int)
+    parser.add_argument("--local_rank", type=int, default=0)
     args = parser.parse_args()
     train_args_file = args.train_args_file
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, ExtraTrainingArguments))
@@ -88,6 +89,9 @@ def load_model(model_args, training_args):
         trust_remote_code=model_args.trust_remote_code,
         _attn_implementation='flash_attention_2' if training_args.use_flash_att else 'sdpa'
     )
+    if training_args.task_type == 'reward':
+        config_kwargs['num_labels'] = 1
+        
     config = AutoConfig.from_pretrained(model_args.model_name_or_path, **config_kwargs)
 
     tokenizer_kwargs = dict(
@@ -109,7 +113,7 @@ def load_model(model_args, training_args):
     elif 'gemma' in model_args.model_name_or_path.lower():
         tokenizer.add_special_tokens({'additional_special_tokens': ['<start_of_turn>', '<end_of_turn>']})
     
-    if training_args.task_type in ['dpo', 'orpo'] and 'Qwen' in tokenizer.__class__.__name__: # qwen没有bos_token，要设置一下，不然dpo train时会报错
+    if training_args.task_type in ['dpo', 'orpo', 'reward'] and 'Qwen' in tokenizer.__class__.__name__: # qwen没有bos_token，要设置一下，不然dpo train时会报错
         tokenizer.add_special_tokens(dict(bos_token=tokenizer.eos_token))
         tokenizer.bos_token_id = tokenizer.eos_token_id
 
@@ -160,6 +164,9 @@ def load_model(model_args, training_args):
     )
     if training_args.task_type == 'zero-pt':
         model = AutoModelForCausalLM.from_config(config, trust_remote_code=True, torch_dtype=torch_dtype)
+    elif training_args.task_type == 'reward':
+        model = AutoModelForSequenceClassification.from_pretrained(model_args.model_name_or_path, config=config, **model_kwargs)
+        model.config.pad_token_id = tokenizer.pad_token_id
     else:
         model = AutoModelForCausalLM.from_pretrained(model_args.model_name_or_path, config=config, **model_kwargs)
 
@@ -186,8 +193,12 @@ def load_model(model_args, training_args):
         lora_dropout = training_args.lora_dropout
         lora_alpha = training_args.lora_alpha
         logger.info(f'lora_rank: {lora_rank}')
+        if training_args.task_type == 'reward':
+            task_type = TaskType.SEQ_CLS
+        else:
+            task_type = TaskType.CAUSAL_LM
         peft_config = LoraConfig(
-            task_type=TaskType.CAUSAL_LM,
+            task_type=task_type,
             target_modules=target_modules,
             r=lora_rank, 
             lora_alpha=lora_alpha,
@@ -195,7 +206,7 @@ def load_model(model_args, training_args):
             modules_to_save=modules_to_save
         )
 
-    if training_args.train_mode in ['lora', 'qlora'] and training_args.task_type in ['pt', 'zero-pt', 'sft']:
+    if training_args.train_mode in ['lora', 'qlora'] and training_args.task_type in ['pt', 'sft']:
         model = get_peft_model(model, peft_config)
 
         if training_args.trainable_params:
@@ -209,7 +220,7 @@ def load_model(model_args, training_args):
     # init ref_model
     if training_args.task_type == 'dpo':
         ref_model = AutoModelForCausalLM.from_pretrained(model_args.model_name_or_path, **model_kwargs) if training_args.train_mode == 'full' else None
-    # pretrain和sft，不需要ref_model
+    # 其他任务不需要ref_model
     else:
         ref_model = None
     
@@ -261,6 +272,16 @@ def load_dataset(data_args, training_args, tokenizer):
                     preprocessing_num_workers=data_args.preprocessing_num_workers,
                     template_name=data_args.template_name,
                 )
+            elif training_args.task_type == 'reward':
+                train_dataset = build_reward_dataset(
+                    data_path=files,
+                    tokenizer=tokenizer,
+                    max_seq_len=data_args.max_seq_length,
+                    discard_long_sample=data_args.discard_long_sample,
+                    data_cache_dir=data_args.data_cache_dir,
+                    preprocessing_num_workers=data_args.preprocessing_num_workers,
+                    template_name=data_args.template_name
+                )
             else:
                 pass
     
@@ -298,14 +319,26 @@ def load_dataset(data_args, training_args, tokenizer):
                     preprocessing_num_workers=data_args.preprocessing_num_workers,
                     template_name=data_args.template_name,
                 )
+            elif training_args.task_type == 'reward':
+                eval_dataset = build_reward_dataset(
+                    data_path=files,
+                    tokenizer=tokenizer,
+                    max_seq_len=data_args.max_seq_length,
+                    discard_long_sample=data_args.discard_long_sample,
+                    data_cache_dir=data_args.data_cache_dir,
+                    preprocessing_num_workers=data_args.preprocessing_num_workers,
+                    template_name=data_args.template_name
+                )
             else:
                 pass
         
-        logger.info(f'Num train_samples {len(train_dataset)}Num train_samples {len(train_dataset)}')
-        if training_args.task_type in ['dpo', 'orpo']:
-            logger.info(f'training example:\n{train_dataset[0]["prompt"] + train_dataset[0]["chosen"]}')
-        else:
-            logger.info(f'training example:\n{tokenizer.decode(train_dataset[0]["input_ids"])}')
+    logger.info(f'Num train_samples: {len(train_dataset)}, Num train_samples: {len(train_dataset)}')
+    if training_args.task_type in ['dpo', 'orpo']:
+        logger.info(f'training example:\n{train_dataset[0]["prompt"] + train_dataset[0]["chosen"]}')
+    elif training_args.task_type == 'reward':
+        logger.info(f'training example:\n{tokenizer.decode(train_dataset[0]["input_ids_chosen"])}')
+    else:
+        logger.info(f'training example:\n{tokenizer.decode(train_dataset[0]["input_ids"])}')
     
     return train_dataset, eval_dataset
 
@@ -342,6 +375,16 @@ def main():
             tokenizer=tokenizer,
             peft_config=peft_config
         )
+    elif training_args.task_type == 'reward':
+        trainer = RewardTrainer(
+            model=model,
+            args=training_args,
+            train_dataset=train_dataset,
+            eval_dataset=eval_dataset,
+            tokenizer=tokenizer,
+            peft_config=peft_config,
+            max_length=data_args.max_seq_length
+        )
     else:
         # pretrain or sft
         data_collator = DataCollatorForPadding(tokenizer=tokenizer)
@@ -355,6 +398,7 @@ def main():
         )
     
     if training_args.gradient_checkpointing:
+        training_args.gradient_checkpointing_kwargs = dict(use_reentrant=False)
         model.gradient_checkpointing_enable()
 
     # Training
