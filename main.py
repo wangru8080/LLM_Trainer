@@ -336,7 +336,7 @@ def load_dataset(data_args, training_args, tokenizer):
     if training_args.task_type in ['dpo', 'orpo']:
         logger.info(f'training example:\n{train_dataset[0]["prompt"] + train_dataset[0]["chosen"]}')
     elif training_args.task_type == 'reward':
-        logger.info(f'training example:\n{tokenizer.decode(train_dataset[0]["input_ids_chosen"])}')
+        logger.info(f'training example:\nchosen:\n{tokenizer.decode(train_dataset[0]["input_ids_chosen"])}\nrejected:\n{tokenizer.decode(train_dataset[0]["input_ids_rejected"])}')
     else:
         logger.info(f'training example:\n{tokenizer.decode(train_dataset[0]["input_ids"])}')
     
