@@ -29,7 +29,7 @@
 
 使用约150B token进行预训练。进行中，由于资源的情况大约需要训练1400个小时  
 
-预训练迭代1个epoch后,sft一个epoch：  
+预训练迭代1个epoch后,sft训练了1.5个epoch：  
 ![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case5.png)
 ![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case6.png)
 ![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case7.png)
