@@ -2,7 +2,7 @@
 从零训练一个0.4B的大模型（灵犀大模型，寓意心有灵犀一点通）。代码包括了pretrain，sft，dpo等训练方式
 
 ## Lingxi-0.4B(灵犀大模型)
-<details open> 
+<details close> 
 <summary>  <b>2024-10-02</b> </summary>
 第一版使用的预训练数据较少，跑通整个流程，暂无模型身份信息，仅支持单轮对话。目前存在幻觉、重复等问题。  
 
@@ -24,7 +24,7 @@
 ![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case4.png)
 </details>
 
-<details close> 
+<details open> 
 <summary>  <b>2024-10-05</b> </summary>
 
 使用约150B token进行预训练。进行中，由于资源的情况大约需要训练1400个小时  
@@ -38,3 +38,4 @@
 ![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case10.png)
 ![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case11.png)
 初步具备多轮聊天和代码的功能
+</details>
