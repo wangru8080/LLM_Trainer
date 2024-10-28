@@ -27,4 +27,11 @@
 <details close> 
 <summary>  <b>2024-10-05</b> </summary>
 
-使用约150B token进行预训练。进行中，由于资源的情况大约需要训练1400个小时
+使用约150B token进行预训练。进行中，由于资源的情况大约需要训练1400个小时  
+
+预训练迭代1个epoch后,sft一个epoch：  
+![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case5.png)
+![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case6.png)
+![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case7.png)
+![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case8.png)
+初步具备聊天和代码的功能
