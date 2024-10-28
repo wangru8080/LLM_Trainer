@@ -34,4 +34,7 @@
 ![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case6.png)
 ![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case7.png)
 ![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case8.png)
-初步具备聊天和代码的功能
+![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case9.png)
+![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case10.png)
+![](https://github.com/wangru8080/LLM_Trainer/blob/main/resource/case11.png)
+初步具备多轮聊天和代码的功能
