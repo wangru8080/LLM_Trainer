@@ -14,7 +14,7 @@ from transformers import (
     AddedToken
 )
 from transformers.trainer_utils import get_last_checkpoint
-from trl import DPOTrainer, ORPOTrainer, RewardTrainer
+from trl import ORPOTrainer, RewardTrainer
 import glob
 import argparse
 import logging
@@ -24,7 +24,7 @@ import bitsandbytes as bnb
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training, TaskType
 from arguments import ModelArguments, DataTrainingArguments, ExtraTrainingArguments
 from build_dataset import build_sft_dataset, build_pretrain_dataset, build_dpo_dataset, build_reward_dataset, DataCollatorForPadding
-from trainer import CustomizedTrainer
+from trainer import CustomizedTrainer, DrDPOTrainer
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -334,7 +334,7 @@ def load_dataset(data_args, training_args, tokenizer):
         
     logger.info(f'Num train_samples: {len(train_dataset)}, Num train_samples: {len(train_dataset)}')
     if training_args.task_type in ['dpo', 'orpo']:
-        logger.info(f'training example:\n{train_dataset[0]["prompt"] + train_dataset[0]["chosen"]}')
+        logger.info(f'training example:\nchosen:\n{train_dataset[0]["prompt"] + train_dataset[0]["chosen"]}\nrejected:\n{train_dataset[0]["prompt"] + train_dataset[0]["rejected"]}')
     elif training_args.task_type == 'reward':
         logger.info(f'training example:\nchosen:\n{tokenizer.decode(train_dataset[0]["input_ids_chosen"])}\nrejected:\n{tokenizer.decode(train_dataset[0]["input_ids_rejected"])}')
     else:
@@ -354,7 +354,7 @@ def main():
     train_dataset, eval_dataset = load_dataset(data_args, training_args, tokenizer)
 
     if training_args.task_type == 'dpo':
-        trainer = DPOTrainer(
+        trainer = DrDPOTrainer(
             model,
             ref_model=ref_model,
             args=training_args,
