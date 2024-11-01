@@ -63,8 +63,8 @@ class DataTrainingArguments:
 
 @dataclass
 class ExtraTrainingArguments(RewardConfig, DPOConfig, ORPOConfig, TrainingArguments):
-    task_type: str = field(default="sft", metadata={"help": "[zero-pt, pt, sft, dpo, orpo, reward]", "choices": ["zero-pt", "pt", "sft", "dpo", "orpo", "reward"]})
-    train_mode: str = field(default="qlora", metadata={"help": "[full, lora, qlora]", "choices": ["full", "lora", "qlora"]})
+    task_type: Optional[str] = field(default="sft", metadata={"help": "[zero-pt, pt, sft, dpo, orpo, reward]", "choices": ["zero-pt", "pt", "sft", "dpo", "orpo", "reward"]})
+    train_mode: Optional[str] = field(default="qlora", metadata={"help": "[full, lora, qlora]", "choices": ["full", "lora", "qlora"]})
     lora_rank : Optional[int] = field(default=None)
     lora_dropout : Optional[float] = field(default=None)
     lora_alpha : Optional[float] = field(default=None)
@@ -73,10 +73,14 @@ class ExtraTrainingArguments(RewardConfig, DPOConfig, ORPOConfig, TrainingArgume
         default=None,
         metadata={"help": "Additional trainable parameters except LoRA weights, if low rank training.", "choices": [None, "embed,norm"]},
     )
-    use_flash_att: bool = field(
+    use_flash_att: Optional[bool] = field(
         default=False,
         metadata={"help": "Use flash attention"}
     )
     load_in_kbits: Optional[int] = field(default=None, metadata={"help": "Wheter to use qlora", "choices": [None, 8, 4]})
     use_flash_attn_ce_loss: Optional[bool] = field(default=False, metadata={"help": "Whether to use CrossEntropyLoss from flash-attention"})
     train_shuffle: Optional[bool] = field(default=False, metadata={"help": "Whether to train shuffle"})
+
+    # dpo config
+    dpo_loss_mode: Optional[str] = field(default=None, metadata={"help": "Wheter to use DrDPO", "choices": [None, "DrDPO"]})
+    dpo_mode_weight: Optional[float] = field(default=1.0, metadata={"help": "providing a strategic balance between exploration and exploitation in noisy training environments"})
