@@ -15,13 +15,15 @@ from transformers.trainer_pt_utils import (
 from transformers.utils import (
     is_peft_available
 )
-from transformers.modeling_utils import PreTrainedModel, unwrap_model
+from transformers.modeling_utils import unwrap_model
 from transformers.trainer_utils import has_length
 from transformers.models.auto.modeling_auto import MODEL_FOR_CAUSAL_LM_MAPPING_NAMES
 from peft import PeftModel
 from packaging import version
 import importlib.metadata
 from flash_attn.losses.cross_entropy import CrossEntropyLoss
+from trl import DPOTrainer
+from typing import Dict, List, Literal, Optional, Union
 
 logger = logging.getLogger(__name__)
 
@@ -123,3 +125,79 @@ class CustomizedTrainer(Trainer):
             loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0]
 
         return (loss, outputs) if return_outputs else loss
+
+class DrDPOTrainer(DPOTrainer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def get_batch_loss_metrics(
+        self,
+        model,
+        batch: Dict[str, Union[List, torch.LongTensor]],
+        train_eval: Literal["train", "eval"] = "train",
+    ):
+        """Compute the DPO loss and other metrics for the given batch of inputs for train or test."""
+        metrics = {}
+
+        forward_output = self.concatenated_forward(model, batch)
+        (
+            policy_chosen_logps,
+            policy_rejected_logps,
+            policy_chosen_logits,
+            policy_rejected_logits,
+            policy_nll_loss,
+        ) = forward_output[:5]
+        if self.aux_loss_enabled:
+            aux_loss = forward_output[5]
+
+        # if reference_chosen_logps and reference_rejected_logps in batch use them, otherwise use the reference model
+        if (
+            "reference_chosen_logps" in batch
+            and "reference_rejected_logps" in batch
+            and (self.precompute_ref_log_probs or self.args.rpo_alpha is not None)
+        ):
+            reference_chosen_logps = batch["reference_chosen_logps"]
+            reference_rejected_logps = batch["reference_rejected_logps"]
+        else:
+            with torch.no_grad():
+                if self.ref_model is None:
+                    with self.null_ref_context():
+                        reference_chosen_logps, reference_rejected_logps = self.concatenated_forward(
+                            self.model, batch
+                        )[:2]
+                else:
+                    reference_chosen_logps, reference_rejected_logps = self.concatenated_forward(
+                        self.ref_model, batch
+                    )[:2]
+
+        losses, chosen_rewards, rejected_rewards = self.dpo_loss(
+            policy_chosen_logps,
+            policy_rejected_logps,
+            reference_chosen_logps,
+            reference_rejected_logps,
+        )
+        reward_accuracies = (chosen_rewards > rejected_rewards).float()
+
+        if self.args.rpo_alpha is not None:
+            # RPO loss from V3 of the paper:
+            losses = losses + policy_nll_loss * self.args.rpo_alpha
+
+        prefix = "eval_" if train_eval == "eval" else ""
+        metrics[f"{prefix}rewards/chosen"] = chosen_rewards.mean().cpu()
+        metrics[f"{prefix}rewards/rejected"] = rejected_rewards.mean().cpu()
+        metrics[f"{prefix}rewards/accuracies"] = reward_accuracies.mean().cpu()
+        metrics[f"{prefix}rewards/margins"] = (chosen_rewards - rejected_rewards).mean().cpu()
+        metrics[f"{prefix}logps/rejected"] = policy_rejected_logps.detach().mean().cpu()
+        metrics[f"{prefix}logps/chosen"] = policy_chosen_logps.detach().mean().cpu()
+        metrics[f"{prefix}logits/rejected"] = policy_rejected_logits.detach().mean().cpu()
+        metrics[f"{prefix}logits/chosen"] = policy_chosen_logits.detach().mean().cpu()
+        if self.args.rpo_alpha is not None:
+            metrics[f"{prefix}nll_loss"] = policy_nll_loss.detach().mean().cpu()
+
+        if self.aux_loss_enabled:
+            return losses.mean() + getattr(model.config, "router_aux_loss_coef", 0.0) * aux_loss, metrics
+        
+        if self.args.dpo_loss_mode == 'DrDPO':
+            return - self.args.dpo_mode_weight * torch.log(torch.mean(torch.exp(- losses / self.args.dpo_mode_weight))), metrics
+        
+        return losses.mean(), metrics 
