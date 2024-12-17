@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional
 from transformers import TrainingArguments
-from trl import DPOConfig, ORPOConfig, RewardConfig
+from trl import DPOConfig, ORPOConfig, RewardConfig, CPOConfig
 from template import template_dict
 
 @dataclass
@@ -62,8 +62,8 @@ class DataTrainingArguments:
     )
 
 @dataclass
-class ExtraTrainingArguments(RewardConfig, DPOConfig, ORPOConfig, TrainingArguments):
-    task_type: Optional[str] = field(default="sft", metadata={"help": "[zero-pt, pt, sft, dpo, orpo, reward]", "choices": ["zero-pt", "pt", "sft", "dpo", "orpo", "reward"]})
+class ExtraTrainingArguments(CPOConfig, RewardConfig, DPOConfig, ORPOConfig, TrainingArguments):
+    task_type: Optional[str] = field(default="sft", metadata={"help": "['zero-pt', 'pt', 'sft', 'dpo', 'orpo', 'reward', 'simpo']", "choices": ["zero-pt", "pt", "sft", "dpo", "orpo", "reward", "simpo"]})
     train_mode: Optional[str] = field(default="qlora", metadata={"help": "[full, lora, qlora]", "choices": ["full", "lora", "qlora"]})
     lora_rank : Optional[int] = field(default=None)
     lora_dropout : Optional[float] = field(default=None)
@@ -81,6 +81,6 @@ class ExtraTrainingArguments(RewardConfig, DPOConfig, ORPOConfig, TrainingArgume
     use_flash_attn_ce_loss: Optional[bool] = field(default=False, metadata={"help": "Whether to use CrossEntropyLoss from flash-attention"})
     train_shuffle: Optional[bool] = field(default=False, metadata={"help": "Whether to train shuffle"})
 
-    # dpo config
-    dpo_loss_mode: Optional[str] = field(default=None, metadata={"help": "Wheter to use DrDPO", "choices": [None, "DrDPO"]})
-    dpo_mode_weight: Optional[float] = field(default=1.0, metadata={"help": "providing a strategic balance between exploration and exploitation in noisy training environments"})
+    # dro config
+    dro_mode: Optional[bool] = field(default=False, metadata={"help": "Wheter to use DRO"})
+    dro_weight: Optional[float] = field(default=1.0, metadata={"help": "providing a strategic balance between exploration and exploitation in noisy training environments"})
