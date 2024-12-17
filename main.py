@@ -24,7 +24,7 @@ import bitsandbytes as bnb
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training, TaskType
 from arguments import ModelArguments, DataTrainingArguments, ExtraTrainingArguments
 from build_dataset import build_sft_dataset, build_pretrain_dataset, build_dpo_dataset, build_reward_dataset, DataCollatorForPadding
-from trainer import CustomizedTrainer, DrDPOTrainer
+from trainer import CustomizedTrainer, DrDPOTrainer, DrCPOTrainer
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -113,7 +113,7 @@ def load_model(model_args, training_args):
     elif 'gemma' in model_args.model_name_or_path.lower():
         tokenizer.add_special_tokens({'additional_special_tokens': ['<start_of_turn>', '<end_of_turn>']})
     
-    if training_args.task_type in ['dpo', 'orpo', 'reward'] and 'Qwen' in tokenizer.__class__.__name__: # qwen没有bos_token，要设置一下，不然dpo train时会报错
+    if training_args.task_type in ['dpo', 'orpo', 'reward'] and tokenizer.bos_token is None: # 没有bos_token，要设置一下，不然dpo train时会报错
         tokenizer.add_special_tokens(dict(bos_token=tokenizer.eos_token))
         tokenizer.bos_token_id = tokenizer.eos_token_id
 
@@ -264,7 +264,7 @@ def load_dataset(data_args, training_args, tokenizer):
                     preprocessing_num_workers=data_args.preprocessing_num_workers,
                     template_name=data_args.template_name
                 )
-            elif training_args.task_type in ['dpo', 'orpo']:
+            elif training_args.task_type in ['dpo', 'orpo', 'simpo']:
                 train_dataset = build_dpo_dataset(
                     data_path=files,
                     max_seq_len=data_args.max_seq_length,
@@ -311,7 +311,7 @@ def load_dataset(data_args, training_args, tokenizer):
                     preprocessing_num_workers=data_args.preprocessing_num_workers,
                     template_name=data_args.template_name
                 )
-            elif training_args.task_type in ['dpo', 'orpo']:
+            elif training_args.task_type in ['dpo', 'orpo', 'simpo']:
                 eval_dataset = build_dpo_dataset(
                     data_path=files,
                     max_seq_len=data_args.max_seq_length,
@@ -333,7 +333,7 @@ def load_dataset(data_args, training_args, tokenizer):
                 pass
         
     logger.info(f'Num train_samples: {len(train_dataset)}, Num train_samples: {len(train_dataset)}')
-    if training_args.task_type in ['dpo', 'orpo']:
+    if training_args.task_type in ['dpo', 'orpo', 'simpo']:
         logger.info(f'training example:\nchosen:\n{train_dataset[0]["prompt"] + train_dataset[0]["chosen"]}\nrejected:\n{train_dataset[0]["prompt"] + train_dataset[0]["rejected"]}')
     elif training_args.task_type == 'reward':
         logger.info(f'training example:\nchosen:\n{tokenizer.decode(train_dataset[0]["input_ids_chosen"])}\nrejected:\n{tokenizer.decode(train_dataset[0]["input_ids_rejected"])}')
@@ -368,6 +368,18 @@ def main():
         )
     elif training_args.task_type == 'orpo':
         trainer = ORPOTrainer(
+            model=model,
+            args=training_args,
+            train_dataset=train_dataset,
+            eval_dataset=eval_dataset,
+            tokenizer=tokenizer,
+            peft_config=peft_config
+        )
+    elif training_args.task_type == 'simpo':
+        training_args.loss_type = 'simpo'
+        training_args.cpo_alpha = 0.0
+        training_args.max_length = data_args.max_seq_length
+        trainer = DrCPOTrainer(
             model=model,
             args=training_args,
             train_dataset=train_dataset,
